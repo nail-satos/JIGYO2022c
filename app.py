@@ -38,6 +38,8 @@ from imblearn.over_sampling import SMOTE
 # ロゴの表示用
 from PIL import Image
 
+# ディープコピー
+import copy
 
 sns.set()
 japanize_matplotlib.japanize()  # 日本語フォントの設定
@@ -232,15 +234,26 @@ def main():
         # アップロードの有無を確認
         if uploaded_file is not None:
 
-            # データフレームの読み込み
-            df = pd.read_csv(uploaded_file)
+            # 一度、read_csvをするとインスタンスが消えるので、コピーしておく
+            ufile = copy.deepcopy(uploaded_file)
 
-            # ary_cnt = ["10", "50", "100", ]
-            # cnt = st.sidebar.selectbox("Select Max mm", ary_cnt)
-            cnt = st.sidebar.slider('表示する件数', 1, len(df), 10)
+            try:
+                # 文字列の判定
+                pd.read_csv(ufile, encoding="utf_8_sig")
+                enc = "utf_8_sig"
+            except:
+                enc = "shift-jis"
 
-            # テーブルの表示
-            st_display_table(df.head(int(cnt)))
+            finally:
+                # データフレームの読み込み
+                df = pd.read_csv(uploaded_file, encoding=enc) 
+
+                # ary_cnt = ["10", "50", "100", ]
+                # cnt = st.sidebar.selectbox("Select Max mm", ary_cnt)
+                cnt = st.sidebar.slider('表示する件数', 1, len(df), 10)
+
+                # テーブルの表示
+                st_display_table(df.head(int(cnt)))
 
         else:
             st.subheader('訓練用データをアップロードしてください')
@@ -250,105 +263,138 @@ def main():
         # アップロードの有無を確認
         if uploaded_file is not None:
 
-            # データフレームの読み込み
-            df = pd.read_csv(uploaded_file)
+            # 一度、read_csvをするとインスタンスが消えるので、コピーしておく
+            ufile = copy.deepcopy(uploaded_file)
 
-            # テーブルの表示
-            st_display_table(df.describe())
+            try:
+                # 文字列の判定
+                pd.read_csv(ufile, encoding="utf_8_sig")
+                enc = "utf_8_sig"
+            except:
+                enc = "shift-jis"
+
+            finally:
+                # データフレームの読み込み
+                df = pd.read_csv(uploaded_file, encoding=enc) 
+
+                # テーブルの表示
+                st_display_table(df.describe())
 
 
     if choice == 'グラフ表示':
         # アップロードの有無を確認
         if uploaded_file is not None:
 
-            # データフレームの読み込み
-            df = pd.read_csv(uploaded_file)
+            # 一度、read_csvをするとインスタンスが消えるので、コピーしておく
+            ufile = copy.deepcopy(uploaded_file)
 
-            # ary_graph = ["ヒストグラム", "カウントプロット" ]
-            # graph = st.sidebar.selectbox("グラフの種類", ary_graph)
+            try:
+                # 文字列の判定
+                pd.read_csv(ufile, encoding="utf_8_sig")
+                enc = "utf_8_sig"
+            except:
+                enc = "shift-jis"
 
-            hue_col = df.columns[0]     # '退職'
-            x_col = st.sidebar.selectbox("グラフのX軸", df.columns[0:])
+            finally:
+                # データフレームの読み込み
+                df = pd.read_csv(uploaded_file, encoding=enc) 
 
-            # ヒストグラムの表示
-            st_display_histogram(df, x_col, 'null')
+                # ary_graph = ["ヒストグラム", "カウントプロット" ]
+                # graph = st.sidebar.selectbox("グラフの種類", ary_graph)
+
+                hue_col = df.columns[0]     # '退職'
+                x_col = st.sidebar.selectbox("グラフのX軸", df.columns[0:])
+
+                # ヒストグラムの表示
+                st_display_histogram(df, x_col, 'null')
 
 
     if choice == '学習と検証':
         # アップロードの有無を確認
         if uploaded_file is not None:
 
-            # データフレームの読み込み
-            df = pd.read_csv(uploaded_file)
+            # 一度、read_csvをするとインスタンスが消えるので、コピーしておく
+            ufile = copy.deepcopy(uploaded_file)
 
-            # 説明変数と目的変数の設定
-            train_X = df.drop("退職", axis=1) 
-            train_Y = df["退職"]
+            try:
+                # 文字列の判定
+                pd.read_csv(ufile, encoding="utf_8_sig")
+                enc = "utf_8_sig"
+            except:
+                enc = "shift-jis"
 
-            ary_algorithm = ["決定木", "ランダムフォレスト" ]
-            algorithm = st.sidebar.selectbox("学習の手法", ary_algorithm)
+            finally:
+                # データフレームの読み込み
+                df = pd.read_csv(uploaded_file, encoding=enc) 
 
-            # pred_flg = st.sidebar.selectbox('決定木の深さ', ['検証なし', '検証あり'])
+                # 説明変数と目的変数の設定
+                train_X = df.drop("退職", axis=1) 
+                train_Y = df["退職"]
 
-            if algorithm == '決定木':
-                depth = st.sidebar.number_input('決定木の深さ (サーバの負荷軽減の為 Max=3)', min_value = 1, max_value = 3)
- 
-                # 決定木による予測
-                clf, train_pred, train_scores, valid_pred, valid_scores = ml_drtree_pred(train_X, train_Y, 'dtree', depth, 2/3)
+                ary_algorithm = ["決定木", "ランダムフォレスト" ]
+                algorithm = st.sidebar.selectbox("学習の手法", ary_algorithm)
 
+                # pred_flg = st.sidebar.selectbox('決定木の深さ', ['検証なし', '検証あり'])
 
-                # 特徴量の設定（決定木の可視化用）
-                features = df.columns[1:]
-
-                # 決定木の可視化
-                st.caption('決定木の可視化')
-                st_display_dtree(clf, features)
-
-            if algorithm == 'ランダムフォレスト':
-                # ランダムフォレストによる予測
-                clf, train_pred, train_scores, valid_pred, valid_scores = ml_drtree_pred(train_X, train_Y, 'rtree', 0, 2/3)
-
-                # 特徴量の設定（重要度の可視化用）
-                features = df.columns[1:]
-
-                # 重要度の可視化
-                st.caption('重要度の可視化')
-                st_display_rtree(clf, features)
+                if algorithm == '決定木':
+                    depth = st.sidebar.number_input('決定木の深さ (サーバの負荷軽減の為 Max=3)', min_value = 1, max_value = 3)
+    
+                    # 決定木による予測
+                    clf, train_pred, train_scores, valid_pred, valid_scores = ml_drtree_pred(train_X, train_Y, 'dtree', depth, 2/3)
 
 
-            # 決定木＆ランダムフォレストの予測精度を表示
-            st.subheader(f"訓練用データでの予測精度")
-            st.caption('AIの予測が「全員、退職しない」に偏った場合は（意味がないので）全ての精度は0で表示されます')
+                    # 特徴量の設定（決定木の可視化用）
+                    features = df.columns[1:]
 
-            col1, col2, col3 = st.columns(3)
+                    # 決定木の可視化
+                    st.caption('決定木の可視化')
+                    st_display_dtree(clf, features)
 
-            with col1:
-                st.text('正解率')
-                st.subheader(f"{train_scores[0]}")
+                if algorithm == 'ランダムフォレスト':
+                    # ランダムフォレストによる予測
+                    clf, train_pred, train_scores, valid_pred, valid_scores = ml_drtree_pred(train_X, train_Y, 'rtree', 0, 2/3)
 
-            with col2:
-                st.text('再現率')
-                st.subheader(f"{train_scores[1]}")
+                    # 特徴量の設定（重要度の可視化用）
+                    features = df.columns[1:]
 
-            with col3:
-                st.text('適合率')
-                st.subheader(f"{train_scores[2]}")
+                    # 重要度の可視化
+                    st.caption('重要度の可視化')
+                    st_display_rtree(clf, features)
 
-            st.subheader(f"検証用データでの予測精度")
 
-            col4, col5, col6 = st.columns(3)
+                # 決定木＆ランダムフォレストの予測精度を表示
+                st.subheader(f"訓練用データでの予測精度")
+                st.caption('AIの予測が「全員、退職しない」に偏った場合は（意味がないので）全ての精度は0で表示されます')
 
-            with col4:
-                st.text('正解率')
-                st.subheader(f"{valid_scores[0]}")
+                col1, col2, col3 = st.columns(3)
 
-            with col5:
-                st.text('再現率')
-                st.subheader(f"{valid_scores[1]}")
+                with col1:
+                    st.text('正解率')
+                    st.subheader(f"{train_scores[0]}")
 
-            with col6:
-                st.text('適合率')
-                st.subheader(f"{valid_scores[2]}")
+                with col2:
+                    st.text('再現率')
+                    st.subheader(f"{train_scores[1]}")
+
+                with col3:
+                    st.text('適合率')
+                    st.subheader(f"{train_scores[2]}")
+
+                st.subheader(f"検証用データでの予測精度")
+
+                col4, col5, col6 = st.columns(3)
+
+                with col4:
+                    st.text('正解率')
+                    st.subheader(f"{valid_scores[0]}")
+
+                with col5:
+                    st.text('再現率')
+                    st.subheader(f"{valid_scores[1]}")
+
+                with col6:
+                    st.text('適合率')
+                    st.subheader(f"{valid_scores[2]}")
 
 
     if choice == 'About':
@@ -358,7 +404,7 @@ def main():
 
         #components.html("""""")
         st.markdown("Built by [Nail Team]")
-        st.text("Version 0.2")
+        st.text("Version 0.3")
         st.markdown("For More Information check out   (https://nai-lab.com/)")
         
 
